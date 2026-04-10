@@ -8,20 +8,35 @@ import subprocess
 import deps
 import qt_binary_build
 
+# Qt 下载源配置
+QT_MIRROR_ENV = os.environ.get("QT_MIRROR", "")
+
+QT_URLS = {
+    "default": "https://github.com/ONLYOFFICE-data/build_tools_data/raw/refs/heads/master/qt/qt-everywhere-opensource-src-5.9.9.tar.xz",
+    "gitee": "https://gitee.com/toarujianshang/build-tools-data/raw/master/qt/qt-everywhere-opensource-src-5.9.9.tar.xz",
+    "ustc": "https://mirrors.ustc.edu.cn/qtproject/official_releases/qt/5.9/5.9.9/single/qt-everywhere-opensource-src-5.9.9.tar.xz",
+    "tsinghua": "https://mirrors.tuna.tsinghua.edu.cn/qt/official_releases/qt/5.9/5.9.9/single/qt-everywhere-opensource-src-5.9.9.tar.xz",
+}
+
+def get_qt_url():
+    if QT_MIRROR_ENV:
+        return QT_MIRROR_ENV
+    return QT_URLS["ustc"]  # 默认使用中科大镜像
+
 def get_branch_name(directory):
   cur_dir = os.getcwd()
   os.chdir(directory)
-  # detect build_tools branch
-  #command = "git branch --show-current"
   command = "git symbolic-ref --short -q HEAD"
   current_branch = base.run_command(command)['stdout']
   os.chdir(cur_dir)
   return current_branch
 
 def install_qt():
-  # qt
+  qt_url = get_qt_url()
+  print(f"Downloading Qt from: {qt_url}")
+  
   if not base.is_file("./qt_source_5.9.9.tar.xz"):
-    base.download("https://github.com/ONLYOFFICE-data/build_tools_data/raw/refs/heads/master/qt/qt-everywhere-opensource-src-5.9.9.tar.xz", "./qt_source_5.9.9.tar.xz")
+    base.download(qt_url, "./qt_source_5.9.9.tar.xz")
 
   if not base.is_dir("./qt-everywhere-opensource-src-5.9.9"):
     base.cmd("tar", ["-xf", "./qt_source_5.9.9.tar.xz"])

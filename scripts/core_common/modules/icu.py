@@ -9,10 +9,25 @@ import os
 import glob
 import icu_android
 
+# ICU 下载源配置
+ICU_MIRROR_ENV = os.environ.get("ICU_MIRROR", "")
+
+ICU_URLS = {
+    "default": "https://github.com/unicode-org/icu.git",
+    "gitee": "https://gitee.com/mirrors/icu4c.git",
+}
+
+def get_icu_url():
+    if ICU_MIRROR_ENV:
+        return ICU_MIRROR_ENV
+    return ICU_URLS["gitee"]  # 默认使用 Gitee 镜像
+
 def fetch_icu(major, minor, target_dir="icu"):
   if (base.is_dir("./icu2")):
     base.delete_dir_with_access_error("icu2")
-  base.cmd("git", ["clone", "--depth", "1", "--branch", "release-" + major + "-" + minor, "https://github.com/unicode-org/icu.git", "./icu2"])
+  icu_url = get_icu_url()
+  print(f"Cloning ICU from: {icu_url}")
+  base.cmd("git", ["clone", "--depth", "1", "--branch", "release-" + major + "-" + minor, icu_url, "./icu2"])
   base.copy_dir("./icu2/icu4c", target_dir)
   base.delete_dir_with_access_error("icu2")
   return

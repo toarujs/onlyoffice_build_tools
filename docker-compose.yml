@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  documentserver:
+    image: onlyoffice-documentserver:custom
+    container_name: onlyoffice-documentserver
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - documentserver-data:/var/www/onlyoffice/Data
+      - documentserver-logs:/var/log/onlyoffice
+      - documentserver-postgres:/var/lib/postgresql
+      - documentserver-fonts:/usr/share/fonts/truetype/custom
+      - documentserver-ssl:/etc/letsencrypt
+    environment:
+      - COMPANY_NAME=onlyoffice
+      - PRODUCT_NAME=documentserver
+      - DS_DOCKER_INSTALLATION=true
+    restart: unless-stopped
+    mem_limit: 4g
+    cpus: 2.0
+
+  documentserver-api:
+    image: onlyoffice-documentserver:api
+    container_name: onlyoffice-documentserver-api
+    ports:
+      - "8080:80"
+    volumes:
+      - documentserver-api-data:/var/www/onlyoffice/Data
+      - documentserver-api-logs:/var/log/onlyoffice
+      - documentserver-api-postgres:/var/lib/postgresql
+      - documentserver-api-fonts:/usr/share/fonts/truetype/custom
+      - documentserver-api-ssl:/etc/letsencrypt
+    environment:
+      - COMPANY_NAME=onlyoffice
+      - PRODUCT_NAME=documentserver
+      - DS_DOCKER_INSTALLATION=true
+    restart: unless-stopped
+    mem_limit: 2g
+    cpus: 1.0
+
+volumes:
+  documentserver-data:
+  documentserver-logs:
+  documentserver-postgres:
+  documentserver-fonts:
+  documentserver-ssl:
+  documentserver-api-data:
+  documentserver-api-logs:
+  documentserver-api-postgres:
+  documentserver-api-fonts:
+  documentserver-api-ssl:

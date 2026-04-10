@@ -1,0 +1,70 @@
+FROM ubuntu:24.04
+
+LABEL maintainer="ONLYOFFICE Build Environment"
+
+ENV TZ=Etc/UTC
+ENV DEBIAN_FRONTEND=noninteractive
+ENV LANG=en_US.UTF-8 LANGUAGE=en_US:en LC_ALL=en_US.UTF-8
+
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+RUN echo 'keyboard-configuration keyboard-configuration/layoutcode string us' | debconf-set-selections && \
+    echo 'keyboard-configuration keyboard-configuration/modelcode string pc105' | debconf-set-selections
+
+RUN apt-get -y update && \
+    apt-get -y install \
+        sudo \
+        git \
+        git-lfs \
+        curl \
+        wget \
+        p7zip-full \
+        ca-certificates \
+        gnupg \
+        lsb-release \
+        build-essential \
+        python3 \
+        python3-pip \
+        python3-dev \
+        libssl-dev \
+        zlib1g-dev \
+        libbz2-dev \
+        libreadline-dev \
+        libsqlite3-dev \
+        llvm \
+        libncurses5-dev \
+        libncursesw5-dev \
+        xz-utils \
+        tk-dev \
+        libffi-dev \
+        liblzma-dev \
+        libxml2-dev \
+        libxslt1-dev \
+        uuid-dev \
+        pkg-config \
+        subversion
+
+ADD . /build_tools
+WORKDIR /build_tools
+
+RUN cd tools/linux && \
+    ./python.sh
+
+RUN cd tools/linux && \
+    ./python3/bin/python3 ./qt_binary_fetch.py amd64
+
+RUN cd tools/linux && \
+    ./python3/bin/python3 ./deps.py
+
+RUN cd tools/linux && \
+    ./cmake.sh
+
+RUN cd tools/linux/sysroot && \
+    ../python3/bin/python3 ./fetch.py amd64
+
+ARG BRANCH=master
+ENV BRANCH=${BRANCH}
+
+VOLUME ["/build_output"]
+
+CMD ["sh", "-c", "cd /build_tools && ./tools/linux/python3/bin/python3 ./configure.py --sysroot \"1\" --clean \"0\" --update-light \"1\" --branch \"${BRANCH}\" --update \"1\" --module \"desktop server builder\" --qt-dir \"$(pwd)/tools/linux/qt_build/Qt-5.9.9\" && ./tools/linux/python3/bin/python3 ./make.py && cp -r out/linux_64/onlyoffice /build_output/"]

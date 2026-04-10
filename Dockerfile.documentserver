@@ -1,0 +1,131 @@
+ARG BASE_VERSION=24.04
+ARG BASE_IMAGE=ubuntu:${BASE_VERSION}
+
+FROM ${BASE_IMAGE} AS documentserver
+
+LABEL maintainer="ONLYOFFICE Custom Build"
+
+ARG BASE_VERSION
+ARG PG_VERSION=16
+ARG PACKAGE_SUFFIX=t64
+
+ENV LANG=en_US.UTF-8
+ENV LANGUAGE=en_US:en
+ENV LC_ALL=en_US.UTF-8
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PG_VERSION=${PG_VERSION}
+ENV BASE_VERSION=${BASE_VERSION}
+
+ARG ONLYOFFICE_VALUE=onlyoffice
+ARG COMPANY_NAME=onlyoffice
+ARG PRODUCT_NAME=documentserver
+
+RUN echo "#!/bin/sh\nexit 0" > /usr/sbin/policy-rc.d && \
+    apt-get -y update && \
+    apt-get -yq install \
+        wget \
+        apt-transport-https \
+        gnupg \
+        locales \
+        lsb-release \
+        ca-certificates && \
+    locale-gen en_US.UTF-8 && \
+    echo ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true | debconf-set-selections && \
+    ACCEPT_EULA=Y apt-get -yq install \
+        adduser \
+        apt-utils \
+        bomstrip \
+        certbot \
+        cron \
+        curl \
+        htop \
+        libaio1${PACKAGE_SUFFIX} \
+        libasound2${PACKAGE_SUFFIX} \
+        libboost-regex-dev \
+        libcairo2 \
+        libcurl3-gnutls \
+        libcurl4 \
+        libgtk-3-0 \
+        libnspr4 \
+        libnss3 \
+        libstdc++6 \
+        libxml2 \
+        libxss1 \
+        libxtst6 \
+        mysql-client \
+        nano \
+        net-tools \
+        netcat-openbsd \
+        nginx-extras \
+        postgresql \
+        postgresql-client \
+        pwgen \
+        rabbitmq-server \
+        redis-server \
+        sudo \
+        supervisor \
+        ttf-mscorefonts-installer \
+        unixodbc-dev \
+        unzip \
+        xvfb \
+        xxd \
+        zlib1g \
+        python3 \
+        python3-pip \
+        supervisor \
+        libpq-dev || dpkg --configure -a && \
+    if [ $(find /usr/share/fonts/truetype/msttcorefonts -maxdepth 1 -type f -iname '*.ttf' 2>/dev/null | wc -l) -lt 30 ]; then \
+        echo 'warning: msttcorefonts may not be fully installed'; \
+    fi && \
+    echo "SERVER_ADDITIONAL_ERL_ARGS=\"+S 1:1\"" | tee -a /etc/rabbitmq/rabbitmq-env.conf && \
+    sed -i "s/bind .*/bind 127.0.0.1/g" /etc/redis/redis.conf && \
+    sed -i 's/\(application\/zip.*\)/\1\n    application\/wasm wasm;/' /etc/nginx/mime.types && \
+    mkdir -p /var/run/supervisor && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN rm -f /etc/nginx/sites-enabled/default && \
+    rm -f /etc/supervisor/conf.d/*.conf
+
+COPY fonts/ /usr/share/fonts/truetype/
+
+COPY config/nginx/ds.conf /etc/nginx/conf.d/ds.conf
+COPY config/nginx/includes/ /etc/nginx/includes/
+COPY config/nginx/ssl.conf /etc/nginx/snippets/ssl.conf
+COPY config/supervisor/supervisord.conf /etc/supervisor/supervisord.conf
+COPY config/supervisor/conf.d/ /etc/supervisor/conf.d/
+COPY config/logrotate/ds.conf /etc/logrotate.d/ds
+
+COPY run-document-server.sh /app/ds/run-document-server.sh
+COPY onlyoffice/ /app/onlyoffice/
+
+RUN mkdir -p /var/www/${COMPANY_NAME}/${PRODUCT_NAME}/Data && \
+    mkdir -p /var/log/${COMPANY_NAME} && \
+    mkdir -p /var/lib/${COMPANY_NAME} && \
+    mkdir -p /usr/share/fonts/truetype/custom && \
+    chown -R ${COMPANY_NAME}:${COMPANY_NAME} /var/www/${COMPANY_NAME}/${PRODUCT_NAME}/Data && \
+    chown -R ${COMPANY_NAME}:${COMPANY_NAME} /var/log/${COMPANY_NAME} && \
+    chown -R ${COMPANY_NAME}:${COMPANY_NAME} /var/lib/${COMPANY_NAME} && \
+    chmod +x /app/ds/run-document-server.sh && \
+    chmod +x /app/onlyoffice/documentserver/server/FileConverter/bin/*.sh 2>/dev/null || true && \
+    chmod +x /app/onlyoffice/documentserver/server/tools/*.sh 2>/dev/null || true && \
+    ln -sf /usr/share/fonts/truetype/msttcorefonts /usr/share/fonts/truetype/custom/msttcorefonts 2>/dev/null || true
+
+RUN sed -i "s/COMPANY_NAME/${COMPANY_NAME}/g" /etc/nginx/conf.d/*.conf /etc/nginx/includes/*.conf && \
+    sed -i "s/PRODUCT_NAME/${PRODUCT_NAME}/g" /etc/nginx/conf.d/*.conf /etc/nginx/includes/*.conf && \
+    sed -i "s/COMPANY_NAME/${COMPANY_NAME}/g" /etc/supervisor/conf.d/*.conf && \
+    sed -i "s/PRODUCT_NAME/${PRODUCT_NAME}/g" /etc/supervisor/conf.d/*.conf && \
+    sed -i "s/COMPANY_NAME/${COMPANY_NAME}/g" /etc/logrotate.d/ds
+
+EXPOSE 80 443
+
+VOLUME [ \
+    "/var/log/onlyoffice", \
+    "/var/lib/onlyoffice", \
+    "/var/www/onlyoffice/Data", \
+    "/var/lib/postgresql", \
+    "/var/lib/rabbitmq", \
+    "/var/lib/redis", \
+    "/usr/share/fonts/truetype/custom" \
+]
+
+ENTRYPOINT ["/app/ds/run-document-server.sh"]
