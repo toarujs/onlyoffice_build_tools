@@ -8,8 +8,8 @@ import base
 
 # Qt 下载源（按优先级尝试）
 URLS = [
+    "https://github.com/ONLYOFFICE-data/build_tools_data/raw/refs/heads/master/qt/",
     "https://gitee.com/toarujianshang/onlyoffice-build_tools_data/raw/master/qt/",
-    "https://mirrors.ustc.edu.cn/qtproject/official_releases/qt/5.9/5.9.9/single/",
 ]
 
 SYSROOTS = {
@@ -28,6 +28,13 @@ def try_download(url, archive):
         full_url = url + archive
         print(f"Trying: {full_url}")
         base.download(full_url, "./" + archive)
+        
+        # 验证下载的文件是否是有效的压缩包
+        file_size = os.path.getsize("./" + archive)
+        if file_size < 1000:  # 文件太小，可能是 HTML 错误页
+            print(f"File too small ({file_size} bytes), likely error page")
+            os.remove("./" + archive)
+            return False
         return True
     except Exception as e:
         print(f"Failed: {e}")
