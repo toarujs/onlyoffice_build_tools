@@ -8,7 +8,7 @@ import subprocess
 import deps
 import qt_binary_build
 
-QT_URL = "https://gitee.com/toarujianshang/onlyoffice-build_tools_data/raw/master/qt/qt-everywhere-opensource-src-5.9.9.tar.xz"
+QT_URL = "https://github.com/ONLYFFICE-data/build_tools_data/raw/refs/heads/master/qt/qt-everywhere-opensource-src-5.9.9.tar.xz"
 
 def get_branch_name(directory):
   cur_dir = os.getcwd()
