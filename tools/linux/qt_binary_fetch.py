@@ -6,10 +6,14 @@ sys.path.append('../../scripts')
 
 import base
 
-# Qt 下载源（按优先级尝试）
+# Qt 下载源（按优先级）
 URLS = [
-    "https://github.com/ONLYOFFICE-data/build_tools_data/raw/refs/heads/master/qt/",
-    "https://gitee.com/toarujianshang/onlyoffice-build_tools_data/raw/master/qt/",
+    # 中科大镜像
+    "https://mirrors.ustc.edu.cn/qtproject/official_releases/qt/5.9/5.9.9/single/",
+    # 清华镜像
+    "https://mirrors.tuna.tsinghua.edu.cn/qt/official_releases/qt/5.9/5.9.9/single/",
+    # 腾讯云镜像
+    "https://mirrors.cloud.tencent.com/qt/official_releases/qt/5.9/5.9.9/single/",
 ]
 
 SYSROOTS = {
@@ -58,13 +62,14 @@ def download_and_extract(name):
   
   if not success:
     print("ERROR: All download sources failed!")
-    print("Please download manually:")
-    print(f"  qt_binary_5.9.9_gcc_64.7z -> place in {os.getcwd()}")
-    sys.exit(1)
+    print("预编译包不可用，将从源码编译 Qt（需要更长时间）...")
+    os.chdir(cur_dir)
+    return False
   
   base.extract(archive_file, "./")
   os.chdir(cur_dir)
   base.setup_local_qmake("./qt_build/Qt-5.9.9/" + COMPILERS[name] + "/bin")
+  return True
 
 def main():
   if len(sys.argv) != 2:
