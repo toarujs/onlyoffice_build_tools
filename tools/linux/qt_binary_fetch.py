@@ -6,23 +6,7 @@ sys.path.append('../../scripts')
 
 import base
 
-# Qt 下载源配置
-# 可通过环境变量 QT_MIRROR 指定
-QT_MIRROR_ENV = os.environ.get("QT_MIRROR", "")
-
-URLS = {
-    "default": "https://github.com/ONLYOFFICE-data/build_tools_data/raw/refs/heads/master/qt/",
-    "gitee": "https://gitee.com/toarujianshang/build-tools-data/raw/master/qt/",
-    "ustc": "https://mirrors.ustc.edu.cn/qtproject/official_releases/qt/5.9/5.9.9/single/",
-    "tsinghua": "https://mirrors.tuna.tsinghua.edu.cn/qt/official_releases/qt/5.9/5.9.9/single/",
-}
-
-def get_url():
-    if QT_MIRROR_ENV:
-        return QT_MIRROR_ENV
-    return URLS["ustc"]  # 默认使用中科大镜像
-
-URL = get_url()
+URL = "https://gitee.com/toarujianshang/onlyoffice-build_tools_data/raw/master/qt/"
 
 SYSROOTS = {
   "amd64": "qt_binary_5.9.9_gcc_64.7z",
@@ -42,7 +26,6 @@ def download_and_extract(name):
   if (base.is_dir(folder)):
     base.delete_dir(folder)
   archive_file = "./" + archive
-  print(f"Downloading Qt from: {URL + archive}")
   base.download(URL + archive, archive_file)
   base.extract(archive_file, "./")
   os.chdir(cur_dir)

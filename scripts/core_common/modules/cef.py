@@ -27,7 +27,7 @@ def make():
     if not config.check_option("platform", platform):
       continue
 
-    url = "https://github.com/ONLYOFFICE-data/build_tools_data/raw/refs/heads/master/cef/"
+    url = "https://gitee.com/toarujianshang/onlyoffice-build_tools_data/raw/master/cef/"
     archive_name = "./cef_binary.7z"
 
     if (-1 != platform.find("_xp")):
