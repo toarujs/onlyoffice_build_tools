@@ -9,12 +9,15 @@ echo "=========================================="
 echo "  ONLYOFFICE 编译脚本"
 echo "=========================================="
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+WORK_DIR="$(dirname "$SCRIPT_DIR")"
+BUILD_OUTPUT="/build_output"
+
 # ========== 环境检测和安装 ==========
 
 echo ""
 echo "===== 第1步: 环境检测 ====="
 
-# 检测并安装基础依赖
 if ! command -v apt-get &> /dev/null; then
     echo "错误: 需要 Debian/Ubuntu 系统"
     exit 1
@@ -53,9 +56,6 @@ echo "Git 镜像配置完成"
 echo ""
 echo "===== 第3步: 克隆 build_tools ====="
 
-WORK_DIR="/root/onlyoffice_build_tools"
-BUILD_OUTPUT="/build_output"
-
 cd /root
 
 if [ -d "$WORK_DIR" ]; then
@@ -68,26 +68,24 @@ else
     cd "$WORK_DIR"
 fi
 
-cd "$WORK_DIR/tools/linux"
-
 # ========== 安装 Python ==========
 
 echo ""
 echo "===== 第4步: 安装 Python 环境 ====="
 
-mkdir -p python3/bin
-ln -sf "$(which python3)" python3/bin/python3
-ln -sf python3 python3/bin/python
-echo "Python 环境就绪"
+PYTHON_DIR="$WORK_DIR/tools/linux/python3"
+mkdir -p "$PYTHON_DIR/bin"
+ln -sf /usr/bin/python3 "$PYTHON_DIR/bin/python3"
+ln -sf python3 "$PYTHON_DIR/bin/python"
+echo "Python 环境就绪: $PYTHON_DIR/bin"
 
 # ========== 下载 Sysroot ==========
 
 echo ""
 echo "===== 第5步: 下载 Sysroot ====="
 
-cd sysroot
-../python3/bin/python3 ./fetch.py amd64
-cd ..
+cd "$WORK_DIR/tools/linux/sysroot"
+"$PYTHON_DIR/bin/python3" ./fetch.py amd64
 echo "Sysroot 下载完成"
 
 # ========== 安装系统依赖 ==========
@@ -95,7 +93,8 @@ echo "Sysroot 下载完成"
 echo ""
 echo "===== 第6步: 安装系统依赖 ====="
 
-../python3/bin/python3 ./deps.py
+cd "$WORK_DIR/tools/linux"
+"$PYTHON_DIR/bin/python3" ./deps.py
 echo "系统依赖安装完成"
 
 # ========== 安装 CMake ==========
@@ -103,6 +102,7 @@ echo "系统依赖安装完成"
 echo ""
 echo "===== 第7步: 安装 CMake ====="
 
+cd "$WORK_DIR/tools/linux"
 ./cmake.sh
 echo "CMake 安装完成"
 
@@ -136,6 +136,7 @@ echo ""
 echo "===== 第9步: 执行编译 ====="
 echo "编译可能需要 3-5 小时，请耐心等待..."
 
+cd "$WORK_DIR/tools/linux"
 export DO_NOT_USE_PREBUILD_QT=1
 ./automate.py server --update=0
 
